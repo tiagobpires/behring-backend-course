@@ -2,9 +2,16 @@ from flask import Flask
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from spectree import SpecTree
 
 db = SQLAlchemy()
 migrate = Migrate()
+api = SpecTree(
+    "flask",
+    title="Behring Backend Course API",
+    version="v1.0",
+    path="docs",
+)
 
 
 def create_app():
@@ -20,6 +27,8 @@ def create_app():
     from controllers import user_controller
 
     app.register_blueprint(user_controller)
+
+    api.register(app)
 
     @app.route("/")
     def hello_world():

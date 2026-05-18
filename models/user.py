@@ -1,5 +1,7 @@
 from factory import db
 from datetime import datetime, timezone
+from pydantic import BaseModel
+from typing import Optional
 
 
 class User(db.Model):
@@ -14,3 +16,14 @@ class User(db.Model):
 
     def __repr__(self) -> str:
         return f"<User {self.username}>"
+
+
+class UserCreate(BaseModel):
+    email: str
+    username: str
+    birthdate: Optional[datetime]
+
+
+class UserResponse(UserCreate):
+    id: int
+    created_at: datetime

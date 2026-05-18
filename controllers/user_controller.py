@@ -1,16 +1,24 @@
 from datetime import datetime
 
-from factory import db
+from factory import db, api
 from sqlalchemy import select, or_
 from flask import Blueprint, jsonify
 from flask.globals import request
-from models.user import User
+from models.user import User, UserCreate, UserResponse
+from utils.response_schema import GenericResponse
+from spectree import Response
 
 user_controller = Blueprint("user_controller", __name__, url_prefix="/users")
 
 
 @user_controller.get("/<int:user_id>")
+@api.validate(
+    resp=Response(HTTP_200=UserResponse, HTTP_404=GenericResponse), tags=["users"]
+)
 def get_user(user_id: int):
+    """
+    Get user by id
+    """
 
     # Consulta
     user = db.session.get(User, user_id)
@@ -28,7 +36,11 @@ def get_user(user_id: int):
 
 
 @user_controller.get("/")
+@api.validate(resp=Response(HTTP_200=None), tags=["users"])
 def get_users():
+    """
+    Get users
+    """
     # Consulta
     users = db.session.scalars(select(User)).all()
 
@@ -46,6 +58,9 @@ def get_users():
 
 
 @user_controller.post("/")
+@api.validate(
+    json=UserCreate, resp=Response(HTTP_201=None, HTTP_409=None), tags=["users"]
+)
 def create_user():
     """
     Create user
@@ -55,10 +70,7 @@ def create_user():
 
     if db.session.scalars(
         select(User).filter(
-            or_(
-                User.username == data["username"],
-                User.email == data["email"],
-            ),
+            User.username == data["username"] | User.email == data["email"]
         )
     ).first():
         return {"msg": "User already exists."}, 409
@@ -80,7 +92,13 @@ def create_user():
 
 
 @user_controller.put("/<int:user_id>")
+@api.validate(resp=Response(HTTP_200=None, HTTP_404=None), tags=["users"])
 def update_user(user_id: int):
+    """
+    Update user
+
+    - Example
+    """
     # Consulta
     user = db.session.get(User, user_id)
 
@@ -104,9 +122,12 @@ def update_user(user_id: int):
     return {"msg": "User was updated."}, 200
 
 
-@user_controller.delete("/<int: user_id>")
+@user_controller.delete("/<int:user_id>")
+@api.validate(resp=Response(HTTP_200=None, HTTP_404=None), tags=["users"])
 def delete_user(user_id: int):
-
+    """
+    Delete user
+    """
     user = db.session.get(User, user_id)
 
     if user is None:
@@ -114,3 +135,5 @@ def delete_user(user_id: int):
 
     db.session.delete(user)
     db.session.commit()
+
+    return {"msg": "User deleted."}, 200
